@@ -201,6 +201,25 @@ Base URL: `http://localhost:4000`
 | `GET` | `/api/reports?fromDate=&toDate=` | Entries filtered by date range, with totals |
 | `GET` | `/api/reminders` | Recommended-service and MOT-due reminders with status |
 
+### Smart prediction (Phase 6)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/api/entries/predict` | Preview the recommended date + explanation before saving |
+
+- The Recommended Service Date is produced by a **rule-based** prediction
+  engine (`backend/src/prediction.ts`, mirrored in `frontend/src/lib/prediction.ts`
+  for live preview). No machine learning — every adjustment is explainable.
+- It starts from a base interval per **Service Type**, then adjusts for
+  **fuel type, mileage, vehicle age, brand/model (performance/luxury),
+  category (safety-critical), entry type** and the vehicle's **service history**.
+- The Add Entry screen shows the recommended date and a short explanation
+  (e.g. *"Recommended sooner because this is a diesel vehicle; it has higher
+  mileage."*) and recomputes live as you change the vehicle, service date,
+  service type or category.
+- The prediction only affects the Recommended Service Date — the **MOT Due
+  Date is never changed** by it.
+
 - The Dashboard uses **bar charts only** (Recharts): monthly cost, most common
   service types, and entries by status, plus summary cards and the top 3
   upcoming services. Friendly empty states show when there is no data.

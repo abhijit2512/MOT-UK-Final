@@ -1,10 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../prisma";
-import {
-  parseFlexibleDate,
-  computeRecommendedServiceDate,
-  isoToDate,
-} from "../dates";
+import { parseFlexibleDate, isoToDate, toIso } from "../dates";
+import { predictRecommendation } from "../prediction";
 
 const router = Router();
 
@@ -63,12 +60,12 @@ function parseEntryInput(
     data.amount = null;
   }
 
-  // serviceDate (required on create) -> also drives recommendedServiceDate
+  // serviceDate (required on create). The Recommended Service Date is derived
+  // from this by the prediction engine in the route handler (not here).
   if (b.serviceDate !== undefined && b.serviceDate !== null && b.serviceDate !== "") {
     const iso = parseFlexibleDate(b.serviceDate);
     if (!iso) return { error: "Service Date is not a valid date" };
     data.serviceDate = isoToDate(iso);
-    data.recommendedServiceDate = isoToDate(computeRecommendedServiceDate(iso));
   } else if (!partial) {
     return { error: "Service Date is required" };
   }
@@ -87,6 +84,37 @@ function parseEntryInput(
   return { data };
 }
 
+// PREVIEW PREDICTION -------------------------------------------------------
+// Lets the UI preview the recommended date + explanation before saving.
+router.post("/predict", async (req: Request, res: Response) => {
+  const b = (req.body ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+  const vehicleId = s(b.vehicleId);
+  if (!vehicleId) return res.status(400).json({ error: "Please select a vehicle" });
+
+  const serviceIso = parseFlexibleDate(b.serviceDate);
+  if (!serviceIso) return res.status(400).json({ error: "Service Date is not a valid date" });
+
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+  if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
+
+  const history = (
+    await prisma.serviceEntry.findMany({ where: { vehicleId }, select: { serviceDate: true } })
+  ).map((e) => toIso(e.serviceDate));
+
+  const prediction = predictRecommendation({
+    vehicle,
+    entryType: s(b.entryType) || "Service",
+    serviceType: s(b.serviceType) || "Full Service",
+    category: s(b.category) || null,
+    serviceDateIso: serviceIso,
+    historyDatesIso: history,
+  });
+
+  res.json(prediction);
+});
+
 // CREATE -------------------------------------------------------------------
 router.post("/", async (req: Request, res: Response) => {
   const parsed = parseEntryInput(req.body, false);
@@ -97,6 +125,25 @@ router.post("/", async (req: Request, res: Response) => {
     where: { id: parsed.data.vehicleId as string },
   });
   if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
+
+  // Derive the Recommended Service Date from the prediction engine.
+  const serviceIso = toIso(parsed.data.serviceDate as Date);
+  const history = (
+    await prisma.serviceEntry.findMany({
+      where: { vehicleId: vehicle.id },
+      select: { serviceDate: true },
+    })
+  ).map((e) => toIso(e.serviceDate));
+
+  const prediction = predictRecommendation({
+    vehicle,
+    entryType: parsed.data.entryType as string,
+    serviceType: parsed.data.serviceType as string,
+    category: (parsed.data.category as string | null) ?? null,
+    serviceDateIso: serviceIso,
+    historyDatesIso: history,
+  });
+  parsed.data.recommendedServiceDate = isoToDate(prediction.recommendedServiceDate);
 
   try {
     const entry = await prisma.serviceEntry.create({
@@ -144,13 +191,42 @@ router.put("/:id", async (req: Request, res: Response) => {
   const parsed = parseEntryInput(req.body, true);
   if ("error" in parsed) return res.status(400).json({ error: parsed.error });
 
-  // If the vehicle is being changed, make sure it exists.
-  if (parsed.data.vehicleId) {
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id: parsed.data.vehicleId as string },
-    });
-    if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
-  }
+  // We re-run the prediction from the EFFECTIVE entry (existing values merged
+  // with this update), so the Recommended Service Date stays correct whenever
+  // the vehicle, service date, service type, category or entry type changes.
+  const existing = await prisma.serviceEntry.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: "Entry not found" });
+
+  const effectiveVehicleId = (parsed.data.vehicleId as string) ?? existing.vehicleId;
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: effectiveVehicleId } });
+  if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
+
+  const serviceIso = parsed.data.serviceDate
+    ? toIso(parsed.data.serviceDate as Date)
+    : toIso(existing.serviceDate);
+  const entryType = (parsed.data.entryType as string) ?? existing.entryType;
+  const serviceType = (parsed.data.serviceType as string) ?? existing.serviceType;
+  const category =
+    "category" in parsed.data ? (parsed.data.category as string | null) : existing.category;
+
+  const history = (
+    await prisma.serviceEntry.findMany({
+      where: { vehicleId: effectiveVehicleId, NOT: { id: req.params.id } },
+      select: { serviceDate: true },
+    })
+  ).map((e) => toIso(e.serviceDate));
+
+  const prediction = predictRecommendation({
+    vehicle,
+    entryType,
+    serviceType,
+    category,
+    serviceDateIso: serviceIso,
+    historyDatesIso: history,
+  });
+  // Note: this only updates recommendedServiceDate. motDueDate is left exactly
+  // as provided/stored — the prediction never touches the MOT Due Date.
+  parsed.data.recommendedServiceDate = isoToDate(prediction.recommendedServiceDate);
 
   try {
     const entry = await prisma.serviceEntry.update({
