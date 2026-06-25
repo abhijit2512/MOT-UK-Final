@@ -1,18 +1,46 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../prisma";
-import { ensureDemoUser } from "../demoUser";
 
 const router = Router();
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-/**
- * Validate and normalise the vehicle fields from the request body.
- * Returns either { data } or { error } (a human-readable message).
- */
+const userSelect = { id: true, name: true, email: true } as const;
+const vehicleInclude = {
+  owner: { select: userSelect },
+  accesses: { include: { user: { select: userSelect } } },
+} as const;
+
+/** Shape a vehicle for the client, including who can access it and my role. */
+function serialize(vehicle: any, userId: string) {
+  const myRole =
+    vehicle.ownerId === userId
+      ? "Owner"
+      : vehicle.accesses?.find((a: any) => a.userId === userId)?.role ?? null;
+  return {
+    id: vehicle.id,
+    brandName: vehicle.brandName,
+    model: vehicle.model,
+    registeredYear: vehicle.registeredYear,
+    fuelType: vehicle.fuelType,
+    registrationNumber: vehicle.registrationNumber,
+    vehicleType: vehicle.vehicleType,
+    mileage: vehicle.mileage,
+    ownerId: vehicle.ownerId,
+    owner: vehicle.owner ?? null,
+    accesses: (vehicle.accesses ?? []).map((a: any) => ({
+      userId: a.userId,
+      role: a.role,
+      user: a.user,
+    })),
+    myRole,
+    createdAt: vehicle.createdAt,
+    updatedAt: vehicle.updatedAt,
+  };
+}
+
 function parseVehicleInput(body: unknown, partial = false) {
   const b = (body ?? {}) as Record<string, unknown>;
-
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
   const brandName = str(b.brandName);
@@ -21,7 +49,6 @@ function parseVehicleInput(body: unknown, partial = false) {
   const registrationNumber = str(b.registrationNumber).toUpperCase();
   const vehicleType = str(b.vehicleType);
 
-  // For create, these fields are required.
   if (!partial) {
     if (!brandName) return { error: "Vehicle Brand Name is required" };
     if (!model) return { error: "Vehicle Model is required" };
@@ -29,7 +56,6 @@ function parseVehicleInput(body: unknown, partial = false) {
     if (!registrationNumber) return { error: "Registration Number is required" };
   }
 
-  // Registered Year: must be a realistic vehicle year.
   let registeredYear: number | undefined;
   if (b.registeredYear !== undefined && b.registeredYear !== null && b.registeredYear !== "") {
     registeredYear = Number(b.registeredYear);
@@ -40,7 +66,6 @@ function parseVehicleInput(body: unknown, partial = false) {
     return { error: "Registered Year is required" };
   }
 
-  // Mileage: optional, non-negative integer.
   let mileage: number | null | undefined;
   if (b.mileage === undefined || b.mileage === null || b.mileage === "") {
     mileage = partial ? undefined : null;
@@ -69,11 +94,11 @@ router.post("/", async (req: Request, res: Response) => {
   if ("error" in parsed) return res.status(400).json({ error: parsed.error });
 
   try {
-    const ownerId = await ensureDemoUser();
     const vehicle = await prisma.vehicle.create({
-      data: { ...(parsed.data as any), ownerId },
+      data: { ...(parsed.data as any), ownerId: req.userId! },
+      include: vehicleInclude,
     });
-    res.status(201).json(vehicle);
+    res.status(201).json(serialize(vehicle, req.userId!));
   } catch (err: any) {
     if (err?.code === "P2002") {
       return res.status(409).json({ error: "A vehicle with that Registration Number already exists" });
@@ -83,13 +108,15 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// LIST ---------------------------------------------------------------------
-router.get("/", async (_req: Request, res: Response) => {
+// LIST (only vehicles I own or have been given access to) -------------------
+router.get("/", async (req: Request, res: Response) => {
   try {
     const vehicles = await prisma.vehicle.findMany({
+      where: { OR: [{ ownerId: req.userId }, { accesses: { some: { userId: req.userId } } }] },
       orderBy: { createdAt: "desc" },
+      include: vehicleInclude,
     });
-    res.json(vehicles);
+    res.json(vehicles.map((v) => serialize(v, req.userId!)));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not list vehicles" });
@@ -99,17 +126,28 @@ router.get("/", async (_req: Request, res: Response) => {
 // GET ONE ------------------------------------------------------------------
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: req.params.id },
+      include: vehicleInclude,
+    });
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
-    res.json(vehicle);
+    const serialized = serialize(vehicle, req.userId!);
+    if (!serialized.myRole) return res.status(403).json({ error: "You don't have access to this vehicle" });
+    res.json(serialized);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not get vehicle" });
   }
 });
 
-// UPDATE -------------------------------------------------------------------
+// UPDATE (owner only) ------------------------------------------------------
 router.put("/:id", async (req: Request, res: Response) => {
+  const existing = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: "Vehicle not found" });
+  if (existing.ownerId !== req.userId) {
+    return res.status(403).json({ error: "Only the owner can edit this vehicle" });
+  }
+
   const parsed = parseVehicleInput(req.body, true);
   if ("error" in parsed) return res.status(400).json({ error: parsed.error });
 
@@ -117,10 +155,10 @@ router.put("/:id", async (req: Request, res: Response) => {
     const vehicle = await prisma.vehicle.update({
       where: { id: req.params.id },
       data: parsed.data as any,
+      include: vehicleInclude,
     });
-    res.json(vehicle);
+    res.json(serialize(vehicle, req.userId!));
   } catch (err: any) {
-    if (err?.code === "P2025") return res.status(404).json({ error: "Vehicle not found" });
     if (err?.code === "P2002") {
       return res.status(409).json({ error: "A vehicle with that Registration Number already exists" });
     }
@@ -129,16 +167,68 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE -------------------------------------------------------------------
+// DELETE (owner only) ------------------------------------------------------
 router.delete("/:id", async (req: Request, res: Response) => {
-  try {
-    await prisma.vehicle.delete({ where: { id: req.params.id } });
-    res.json({ ok: true });
-  } catch (err: any) {
-    if (err?.code === "P2025") return res.status(404).json({ error: "Vehicle not found" });
-    console.error(err);
-    res.status(500).json({ error: "Could not delete vehicle" });
+  const existing = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: "Vehicle not found" });
+  if (existing.ownerId !== req.userId) {
+    return res.status(403).json({ error: "Only the owner can delete this vehicle" });
   }
+  await prisma.vehicle.delete({ where: { id: req.params.id } });
+  res.json({ ok: true });
+});
+
+// ASSIGN / UPDATE ACCESS (owner only) --------------------------------------
+router.post("/:id/access", async (req: Request, res: Response) => {
+  const b = (req.body ?? {}) as Record<string, unknown>;
+  const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
+  const role = typeof b.role === "string" ? b.role.trim() : "";
+
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+  if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+  if (vehicle.ownerId !== req.userId) {
+    return res.status(403).json({ error: "Only the owner can manage access" });
+  }
+  if (role !== "Editor" && role !== "Viewer") {
+    return res.status(400).json({ error: "Role must be Editor or Viewer" });
+  }
+
+  const target = await prisma.user.findUnique({ where: { email } });
+  if (!target) return res.status(404).json({ error: "No registered user with that email" });
+  if (target.id === vehicle.ownerId) {
+    return res.status(400).json({ error: "That user is already the owner" });
+  }
+
+  await prisma.vehicleAccess.upsert({
+    where: { vehicleId_userId: { vehicleId: vehicle.id, userId: target.id } },
+    update: { role },
+    create: { vehicleId: vehicle.id, userId: target.id, role },
+  });
+
+  const updated = await prisma.vehicle.findUnique({
+    where: { id: vehicle.id },
+    include: vehicleInclude,
+  });
+  res.json(serialize(updated, req.userId!));
+});
+
+// REMOVE ACCESS (owner only) -----------------------------------------------
+router.delete("/:id/access/:userId", async (req: Request, res: Response) => {
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+  if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+  if (vehicle.ownerId !== req.userId) {
+    return res.status(403).json({ error: "Only the owner can manage access" });
+  }
+
+  await prisma.vehicleAccess
+    .delete({ where: { vehicleId_userId: { vehicleId: vehicle.id, userId: req.params.userId } } })
+    .catch(() => null); // ignore if it wasn't there
+
+  const updated = await prisma.vehicle.findUnique({
+    where: { id: vehicle.id },
+    include: vehicleInclude,
+  });
+  res.json(serialize(updated, req.userId!));
 });
 
 export default router;

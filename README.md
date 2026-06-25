@@ -35,6 +35,33 @@ MOT-UK-Final/
 
 ---
 
+## Accounts & roles (Phase 8)
+
+The app requires login. Passwords are hashed with bcrypt and never stored in
+plain text; login returns a JWT token that the frontend stores and sends on
+each request. Set `AUTH_SECRET` in `backend/.env` (see `.env.example`).
+
+Seed demo accounts and sample data with `npm run seed` (in `backend/`):
+
+| Role | Email | Password |
+|---|---|---|
+| Owner | demo@motcare.local | password123 |
+| Editor | editor@motcare.local | password123 |
+| Viewer | viewer@motcare.local | password123 |
+
+Per-vehicle roles:
+- **Owner** — full control: edit/delete the vehicle, manage users, add/edit/delete entries.
+- **Editor** — can add/edit service entries (cannot delete the vehicle or manage users).
+- **Viewer** — read-only.
+
+Users only see vehicles they own or have been given access to. The owner can
+assign another **registered** user to a vehicle by email (Editor/Viewer) and
+remove them, on the Vehicles & Roles screen.
+
+Auth endpoints: `POST /api/auth/register`, `POST /api/auth/login`,
+`GET /api/auth/me`, `POST /api/auth/logout`. All vehicle, entry, dashboard,
+report and reminder endpoints require a valid token.
+
 ## 2. Prerequisites
 
 - **Node.js 18+** (this project was built with Node 22)

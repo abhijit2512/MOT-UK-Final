@@ -43,14 +43,16 @@ model Role {
 // People who own / manage vehicles.
 // ---------------------------------------------------------------------------
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  roleId    String?
-  role      Role?     @relation(fields: [roleId], references: [id])
-  vehicles  Vehicle[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  passwordHash String? // bcrypt hash (nullable so older rows are not broken)
+  roleId       String?
+  role         Role?           @relation(fields: [roleId], references: [id])
+  vehicles     Vehicle[]
+  vehicleAccess VehicleAccess[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@map("users")
 }
@@ -75,11 +77,34 @@ model Vehicle {
 
   serviceEntries ServiceEntry[]
   reminders      Reminder[]
+  accesses       VehicleAccess[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("vehicles")
+}
+
+// ---------------------------------------------------------------------------
+// vehicle_access
+// Gives a registered user a role on a vehicle they do not own.
+//   - Editor: can view the vehicle and add/edit its service entries
+//   - Viewer: can only view the vehicle and its entries
+// (The vehicle owner always has full control via Vehicle.ownerId.)
+// ---------------------------------------------------------------------------
+model VehicleAccess {
+  id        String  @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // "Editor" | "Viewer"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vehicleId, userId])
+  @@map("vehicle_access")
 }
 
 // ---------------------------------------------------------------------------

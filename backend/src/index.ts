@@ -1,9 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import authRouter from "./routes/auth";
 import vehiclesRouter from "./routes/vehicles";
 import serviceEntriesRouter from "./routes/serviceEntries";
 import { dashboardRouter, reportsRouter, remindersRouter } from "./routes/insights";
+import { requireAuth } from "./auth";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -12,16 +14,20 @@ const PORT = Number(process.env.PORT) || 4000;
 app.use(cors());
 app.use(express.json());
 
+// Authentication endpoints (Phase 8) — public.
+app.use("/api/auth", authRouter);
+
+// All data endpoints below require a logged-in user.
 // Vehicle endpoints (Phase 3).
-app.use("/api/vehicles", vehiclesRouter);
+app.use("/api/vehicles", requireAuth, vehiclesRouter);
 
 // Service / MOT entry endpoints (Phase 4).
-app.use("/api/entries", serviceEntriesRouter);
+app.use("/api/entries", requireAuth, serviceEntriesRouter);
 
 // Dashboard, reports and reminders (Phase 5).
-app.use("/api/dashboard", dashboardRouter);
-app.use("/api/reports", reportsRouter);
-app.use("/api/reminders", remindersRouter);
+app.use("/api/dashboard", requireAuth, dashboardRouter);
+app.use("/api/reports", requireAuth, reportsRouter);
+app.use("/api/reminders", requireAuth, remindersRouter);
 
 /**
  * Health check route.

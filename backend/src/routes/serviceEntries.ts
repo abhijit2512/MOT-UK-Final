@@ -2,8 +2,18 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../prisma";
 import { parseFlexibleDate, isoToDate, toIso } from "../dates";
 import { predictRecommendation } from "../prediction";
+import { getVehicleRole, canEditEntries } from "../auth";
 
 const router = Router();
+
+/** Vehicle ids the current user can see (owns or has been given access to). */
+async function accessibleVehicleIds(userId: string): Promise<string[]> {
+  const vehicles = await prisma.vehicle.findMany({
+    where: { OR: [{ ownerId: userId }, { accesses: { some: { userId } } }] },
+    select: { id: true },
+  });
+  return vehicles.map((v) => v.id);
+}
 
 interface ParsedEntry {
   data: Record<string, unknown>;
@@ -99,6 +109,11 @@ router.post("/predict", async (req: Request, res: Response) => {
   const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
   if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
 
+  const role = await getVehicleRole(req.userId!, vehicleId);
+  if (!canEditEntries(role)) {
+    return res.status(403).json({ error: "You don't have permission to add entries for this vehicle" });
+  }
+
   const history = (
     await prisma.serviceEntry.findMany({ where: { vehicleId }, select: { serviceDate: true } })
   ).map((e) => toIso(e.serviceDate));
@@ -125,6 +140,12 @@ router.post("/", async (req: Request, res: Response) => {
     where: { id: parsed.data.vehicleId as string },
   });
   if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
+
+  // Only the owner or an editor of that vehicle may add entries.
+  const role = await getVehicleRole(req.userId!, vehicle.id);
+  if (!canEditEntries(role)) {
+    return res.status(403).json({ error: "You don't have permission to add entries for this vehicle" });
+  }
 
   // Derive the Recommended Service Date from the prediction engine.
   const serviceIso = toIso(parsed.data.serviceDate as Date);
@@ -157,10 +178,12 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// LIST ---------------------------------------------------------------------
-router.get("/", async (_req: Request, res: Response) => {
+// LIST (only entries for vehicles I can access) ----------------------------
+router.get("/", async (req: Request, res: Response) => {
   try {
+    const ids = await accessibleVehicleIds(req.userId!);
     const entries = await prisma.serviceEntry.findMany({
+      where: { vehicleId: { in: ids } },
       orderBy: { serviceDate: "desc" },
       include: { vehicle: true },
     });
@@ -179,6 +202,8 @@ router.get("/:id", async (req: Request, res: Response) => {
       include: { vehicle: true },
     });
     if (!entry) return res.status(404).json({ error: "Entry not found" });
+    const role = await getVehicleRole(req.userId!, entry.vehicleId);
+    if (!role) return res.status(403).json({ error: "You don't have access to this entry" });
     res.json(entry);
   } catch (err) {
     console.error(err);
@@ -197,9 +222,20 @@ router.put("/:id", async (req: Request, res: Response) => {
   const existing = await prisma.serviceEntry.findUnique({ where: { id: req.params.id } });
   if (!existing) return res.status(404).json({ error: "Entry not found" });
 
+  // Need edit rights on the entry's current vehicle.
+  if (!canEditEntries(await getVehicleRole(req.userId!, existing.vehicleId))) {
+    return res.status(403).json({ error: "You don't have permission to edit this entry" });
+  }
+
   const effectiveVehicleId = (parsed.data.vehicleId as string) ?? existing.vehicleId;
   const vehicle = await prisma.vehicle.findUnique({ where: { id: effectiveVehicleId } });
   if (!vehicle) return res.status(400).json({ error: "Selected vehicle does not exist" });
+
+  // If moving the entry to a different vehicle, need edit rights there too.
+  if (effectiveVehicleId !== existing.vehicleId &&
+      !canEditEntries(await getVehicleRole(req.userId!, effectiveVehicleId))) {
+    return res.status(403).json({ error: "You don't have permission to use that vehicle" });
+  }
 
   const serviceIso = parsed.data.serviceDate
     ? toIso(parsed.data.serviceDate as Date)
@@ -242,8 +278,16 @@ router.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE -------------------------------------------------------------------
+// DELETE (owner of the vehicle only) ---------------------------------------
 router.delete("/:id", async (req: Request, res: Response) => {
+  const existing = await prisma.serviceEntry.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: "Entry not found" });
+
+  const role = await getVehicleRole(req.userId!, existing.vehicleId);
+  if (role !== "Owner") {
+    return res.status(403).json({ error: "Only the vehicle owner can delete entries" });
+  }
+
   try {
     await prisma.serviceEntry.delete({ where: { id: req.params.id } });
     res.json({ ok: true });

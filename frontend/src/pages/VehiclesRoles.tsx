@@ -279,27 +279,122 @@ export default function VehiclesRoles() {
       ) : vehicles.length === 0 ? (
         <div className="card"><p>No vehicles yet. Add your first vehicle above.</p></div>
       ) : (
-        vehicles.map((v) => (
-          <div key={v.id} className="card vehicle-card">
-            <div className="vehicle-head">
-              <div>
-                <div className="vehicle-title">{v.brandName} {v.model}</div>
-                <div className="vehicle-reg">{v.registrationNumber}</div>
+        vehicles.map((v) => {
+          const isOwner = v.myRole === "Owner";
+          return (
+            <div key={v.id} className="card vehicle-card">
+              <div className="vehicle-head">
+                <div>
+                  <div className="vehicle-title">{v.brandName} {v.model}</div>
+                  <div className="vehicle-reg">{v.registrationNumber}</div>
+                </div>
+                <span className="badge">{v.registeredYear}</span>
               </div>
-              <span className="badge">{v.registeredYear}</span>
+              <div className="vehicle-meta">
+                <span>⛽ {v.fuelType}</span>
+                {v.vehicleType && <span>🚙 {v.vehicleType}</span>}
+                {v.mileage != null && <span>🛣️ {v.mileage.toLocaleString()} mi</span>}
+              </div>
+
+              <div className="access-summary">
+                <span><span className="lbl">Owner</span>{v.owner?.name ?? "—"}</span>
+                <span className={`badge role-${(v.myRole ?? "").toLowerCase()}`}>Your access: {v.myRole}</span>
+              </div>
+
+              {isOwner ? (
+                <AccessPanel vehicle={v} onChanged={refresh} />
+              ) : (
+                <div className="field-hint">
+                  You have <strong>{v.myRole}</strong> access. Only the owner can edit this vehicle or manage users.
+                </div>
+              )}
+
+              {isOwner && (
+                <div className="form-actions">
+                  <button className="btn btn-ghost" onClick={() => startEdit(v)}>Edit</button>
+                  <button className="btn btn-danger" onClick={() => onDelete(v)}>Delete</button>
+                </div>
+              )}
             </div>
-            <div className="vehicle-meta">
-              <span>⛽ {v.fuelType}</span>
-              {v.vehicleType && <span>🚙 {v.vehicleType}</span>}
-              {v.mileage != null && <span>🛣️ {v.mileage.toLocaleString()} mi</span>}
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+/** Owner-only panel to assign/remove users on a vehicle. */
+function AccessPanel({ vehicle, onChanged }: { vehicle: Vehicle; onChanged: () => void }) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("Viewer");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function assign(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (!email.trim()) return setErr("Enter the user's email");
+    setBusy(true);
+    try {
+      await vehiclesApi.assignAccess(vehicle.id, email.trim(), role);
+      setEmail("");
+      onChanged();
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "Could not assign user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(userId: string) {
+    setErr(null);
+    try {
+      await vehiclesApi.removeAccess(vehicle.id, userId);
+      onChanged();
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "Could not remove user");
+    }
+  }
+
+  return (
+    <div className="access-panel">
+      <div className="access-title">Assigned users</div>
+      {vehicle.accesses.length === 0 ? (
+        <div className="field-hint">No users assigned yet.</div>
+      ) : (
+        vehicle.accesses.map((a) => (
+          <div key={a.userId} className="access-row">
+            <div>
+              <div className="access-name">{a.user.name}</div>
+              <div className="access-email">{a.user.email}</div>
             </div>
-            <div className="form-actions">
-              <button className="btn btn-ghost" onClick={() => startEdit(v)}>Edit</button>
-              <button className="btn btn-danger" onClick={() => onDelete(v)}>Delete</button>
+            <div className="access-actions">
+              <span className="badge">{a.role}</span>
+              <button type="button" className="btn-mini" onClick={() => remove(a.userId)}>
+                Remove
+              </button>
             </div>
           </div>
         ))
       )}
+
+      <form className="access-form" onSubmit={assign}>
+        <input
+          className="field-input"
+          type="email"
+          placeholder="user@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <select className="field-input access-role" value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="Editor">Editor</option>
+          <option value="Viewer">Viewer</option>
+        </select>
+        <button type="submit" className="btn btn-primary" disabled={busy}>
+          {busy ? "…" : "Assign"}
+        </button>
+      </form>
+      {err && <div className="form-error">{err}</div>}
     </div>
   );
 }

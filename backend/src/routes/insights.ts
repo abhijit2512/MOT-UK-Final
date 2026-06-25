@@ -21,16 +21,26 @@ function vehicleLabel(v: { brandName: string; model: string; registrationNumber:
   return `${v.brandName} ${v.model} (${v.registrationNumber})`;
 }
 
+/** Vehicle ids the current user can see (owns or has access to). */
+async function accessibleVehicleIds(userId: string): Promise<string[]> {
+  const vehicles = await prisma.vehicle.findMany({
+    where: { OR: [{ ownerId: userId }, { accesses: { some: { userId } } }] },
+    select: { id: true },
+  });
+  return vehicles.map((v) => v.id);
+}
+
 // ===========================================================================
 // DASHBOARD  ->  GET /api/dashboard/summary
 // ===========================================================================
 export const dashboardRouter = Router();
 
-dashboardRouter.get("/summary", async (_req: Request, res: Response) => {
+dashboardRouter.get("/summary", async (req: Request, res: Response) => {
   try {
+    const ids = await accessibleVehicleIds(req.userId!);
     const [vehicleCount, entries] = await Promise.all([
-      prisma.vehicle.count(),
-      prisma.serviceEntry.findMany({ include: { vehicle: true } }),
+      Promise.resolve(ids.length),
+      prisma.serviceEntry.findMany({ where: { vehicleId: { in: ids } }, include: { vehicle: true } }),
     ]);
 
     const today = isoToday();
@@ -126,7 +136,9 @@ reportsRouter.get("/", async (req: Request, res: Response) => {
   }
 
   try {
+    const ids = await accessibleVehicleIds(req.userId!);
     const all = await prisma.serviceEntry.findMany({
+      where: { vehicleId: { in: ids } },
       orderBy: { serviceDate: "desc" },
       include: { vehicle: true },
     });
@@ -158,9 +170,11 @@ reportsRouter.get("/", async (req: Request, res: Response) => {
 // ===========================================================================
 export const remindersRouter = Router();
 
-remindersRouter.get("/", async (_req: Request, res: Response) => {
+remindersRouter.get("/", async (req: Request, res: Response) => {
   try {
+    const ids = await accessibleVehicleIds(req.userId!);
     const entries = await prisma.serviceEntry.findMany({
+      where: { vehicleId: { in: ids } },
       include: { vehicle: true },
     });
 

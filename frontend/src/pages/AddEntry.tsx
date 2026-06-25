@@ -209,16 +209,23 @@ export default function AddEntry() {
     }
   }
 
-  const noVehicles = !loading && vehicles.length === 0;
+  // Permissions: you can only add/edit entries for vehicles you own or can edit.
+  const roleByVehicle = new Map(vehicles.map((v) => [v.id, v.myRole]));
+  const editableVehicles = vehicles.filter((v) => v.myRole === "Owner" || v.myRole === "Editor");
+  const noEditable = !loading && editableVehicles.length === 0;
 
   return (
     <div>
       <h1 className="page-title">Add Entry</h1>
       <p className="page-subtitle">Record an MOT or service entry for a vehicle.</p>
 
-      {noVehicles && (
+      {noEditable && (
         <div className="card">
-          <p>You need a vehicle first. Add one on the <strong>Vehicles &amp; Roles</strong> screen.</p>
+          {vehicles.length === 0 ? (
+            <p>You need a vehicle first. Add one on the <strong>Vehicles &amp; Roles</strong> screen.</p>
+          ) : (
+            <p>You only have view-only access to your vehicles, so you can't add entries. Ask the owner for Editor access.</p>
+          )}
         </div>
       )}
 
@@ -248,10 +255,10 @@ export default function AddEntry() {
           className="field-input"
           value={form.vehicleId}
           onChange={(e) => update("vehicleId", e.target.value)}
-          disabled={noVehicles}
+          disabled={noEditable}
         >
           <option value="">Select a vehicle</option>
-          {vehicles.map((v) => (
+          {editableVehicles.map((v) => (
             <option key={v.id} value={v.id}>{vehicleLabel(v)}</option>
           ))}
         </select>
@@ -382,7 +389,7 @@ export default function AddEntry() {
         {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={saving || noVehicles}>
+          <button type="submit" className="btn btn-primary" disabled={saving || noEditable}>
             {saving ? "Saving..." : editingId ? "Update entry" : "Add entry"}
           </button>
           {editingId && (
@@ -403,6 +410,9 @@ export default function AddEntry() {
       ) : (
         entries.map((en) => {
           const open = viewingId === en.id;
+          const role = roleByVehicle.get(en.vehicleId) ?? null;
+          const canEdit = role === "Owner" || role === "Editor";
+          const canDelete = role === "Owner";
           return (
             <div key={en.id} className="card">
               <div className="vehicle-head">
@@ -443,8 +453,12 @@ export default function AddEntry() {
                 <button className="btn btn-ghost" onClick={() => setViewingId(open ? null : en.id)}>
                   {open ? "Hide" : "View"}
                 </button>
-                <button className="btn btn-ghost" onClick={() => startEdit(en)}>Edit</button>
-                <button className="btn btn-danger" onClick={() => onDelete(en)}>Delete</button>
+                {canEdit && (
+                  <button className="btn btn-ghost" onClick={() => startEdit(en)}>Edit</button>
+                )}
+                {canDelete && (
+                  <button className="btn btn-danger" onClick={() => onDelete(en)}>Delete</button>
+                )}
               </div>
             </div>
           );
