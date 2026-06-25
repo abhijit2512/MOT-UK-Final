@@ -39,7 +39,8 @@ Thumbs.db
 .vite/
 *.tsbuildinfo
 
-# Capacitor (used in a later phase)
-android/
+# Capacitor — the generated android/ project IS committed so it's ready to open
+# in Android Studio. Its own android/.gitignore excludes build output, the
+# Gradle cache and local.properties (which holds the local SDK path).
 ios/
 .capacitor/

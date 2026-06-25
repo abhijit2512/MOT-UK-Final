@@ -295,7 +295,47 @@ Notes:
 > grant your database user permission to create databases:
 > `ALTER ROLE your_user CREATEDB;`
 
-## 9. Roadmap (later phases)
+## 9. Android app (Capacitor)
+
+The frontend is wrapped with [Capacitor](https://capacitorjs.com) so it can be
+packaged as an Android app. App name **MOT-UK**, app id **com.motuk.carcare**
+(see `frontend/capacitor.config.ts`). The generated `frontend/android/` project
+is committed and ready to open in Android Studio.
+
+> **APK build status:** The Android *project* is fully prepared, but an actual
+> APK was **not** built in this environment because the **Android SDK is not
+> installed** here (Java 21 and Gradle are present, but `ANDROID_HOME` is not
+> set). Building/running the APK must be done on your own machine with Android
+> Studio. Nothing about success has been faked.
+
+### Build the Android app locally
+
+Prerequisites: **Android Studio** (which installs the Android SDK).
+
+```bash
+cd frontend
+npm install
+npm run cap:sync     # builds the web app and copies it into android/
+npm run cap:open     # opens the project in Android Studio
+```
+
+Then in Android Studio press **Run** (emulator or a connected device), or use
+**Build → Build Bundle(s) / APK(s) → Build APK(s)** to produce an APK.
+
+If you ever delete `frontend/android/`, regenerate it with `npx cap add android`.
+
+### Important: API URL on a real device
+
+On a phone/emulator, `http://localhost:4000` points at the device itself, not
+your computer. Before building, set `frontend/.env`:
+
+```
+VITE_API_URL="http://<your-computer-LAN-ip>:4000"   # e.g. http://192.168.1.20:4000
+```
+
+(or the URL of a hosted backend), then run `npm run cap:sync` again.
+
+## 10. Roadmap (later phases)
 
 - **Phase 3:** Vehicle data + car builder (UK brands, dependent models)
 - **Phase 4:** Add / View / Edit / Delete service & MOT entries
