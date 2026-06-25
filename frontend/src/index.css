@@ -193,3 +193,155 @@ body {
 .bottom-nav a.active .icon {
   transform: translateY(-1px);
 }
+
+/* ---- Forms ---- */
+.field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 12px 0 5px;
+}
+
+.field-input {
+  width: 100%;
+  font-size: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+}
+
+.field-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.field-input:disabled {
+  background: #f4f5f8;
+  color: var(--ink-soft);
+}
+
+.form-error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(225, 29, 72, 0.08);
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  color: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-ghost {
+  background: #eef0f6;
+  color: var(--ink);
+}
+
+.btn-danger {
+  background: rgba(225, 29, 72, 0.1);
+  color: var(--danger);
+}
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 18px 2px 10px;
+}
+
+/* ---- Searchable select (combobox) ---- */
+.combo {
+  position: relative;
+}
+
+.combo-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.combo-item {
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.combo-item:hover,
+.combo-item.active {
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--brand);
+}
+
+.combo-empty {
+  padding: 9px 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* ---- Vehicle cards ---- */
+.vehicle-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.vehicle-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.vehicle-reg {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.vehicle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}

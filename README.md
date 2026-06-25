@@ -162,7 +162,32 @@ The app starts on `http://localhost:5173` (Vite will print the exact URL).
 
 ---
 
-## 8. Roadmap (later phases)
+## 8. Vehicle API (Phase 3)
+
+Base URL: `http://localhost:4000`
+
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/api/vehicles` | Create a vehicle |
+| `GET` | `/api/vehicles` | List all vehicles |
+| `GET` | `/api/vehicles/:id` | Get one vehicle |
+| `PUT` | `/api/vehicles/:id` | Update a vehicle |
+| `DELETE` | `/api/vehicles/:id` | Delete a vehicle |
+
+Notes:
+- Phase 3 uses a **temporary demo user** to own vehicles (full login comes
+  later). It is created automatically the first time you add a vehicle.
+- The reusable UK vehicle data (brands, models, fuel types, vehicle types)
+  lives in `frontend/src/data/ukVehicles.ts`.
+- The **Vehicles & Roles** screen lets you add, list, edit and delete vehicles,
+  with a searchable brand dropdown and a model dropdown that depends on the
+  chosen brand (including "Other Model" for custom entries).
+
+> **Tip:** if `prisma migrate dev` reports a shadow-database permission error,
+> grant your database user permission to create databases:
+> `ALTER ROLE your_user CREATEDB;`
+
+## 9. Roadmap (later phases)
 
 - **Phase 3:** Vehicle data + car builder (UK brands, dependent models)
 - **Phase 4:** Add / View / Edit / Delete service & MOT entries

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import vehiclesRouter from "./routes/vehicles";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -8,6 +9,9 @@ const PORT = Number(process.env.PORT) || 4000;
 // Allow the frontend (running on a different port) to call this API.
 app.use(cors());
 app.use(express.json());
+
+// Vehicle endpoints (Phase 3).
+app.use("/api/vehicles", vehiclesRouter);
 
 /**
  * Health check route.
