@@ -220,6 +220,22 @@ Base URL: `http://localhost:4000`
 - The prediction only affects the Recommended Service Date — the **MOT Due
   Date is never changed** by it.
 
+### Voice input (Phase 7)
+
+- The Add Entry screen has a **microphone button** (browser Web Speech API).
+  Speak an entry like *"Oil change for Ford Focus on 12 May 2024, amount 120
+  pounds, status done"* and the form is filled for review.
+- Extraction is **rule-based and offline** (`frontend/src/lib/voiceParse.ts`) —
+  no AI service or API keys. It recognises vehicle, entry type, service type,
+  category, dates, amount, status and notes from the spoken text.
+- Nothing is saved automatically: the **transcript is shown**, fields are
+  filled, and missing items (e.g. date or amount) are flagged so you can add
+  them before pressing **Save**.
+- The recommended date recomputes from the voice-filled data, and the **MOT
+  Due Date stays separate**.
+- If the browser doesn't support speech recognition, a friendly message is
+  shown and **manual entry keeps working**.
+
 - The Dashboard uses **bar charts only** (Recharts): monthly cost, most common
   service types, and entries by status, plus summary cards and the top 3
   upcoming services. Friendly empty states show when there is no data.

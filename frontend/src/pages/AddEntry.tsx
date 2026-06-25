@@ -13,6 +13,8 @@ import {
 } from "../data/serviceData";
 import { parseFlexibleDate, formatDisplay } from "../lib/dates";
 import { predictRecommendation } from "../lib/prediction";
+import VoiceCapture from "../components/VoiceCapture";
+import { parseVoiceEntry } from "../lib/voiceParse";
 
 interface FormState {
   vehicleId: string;
@@ -53,6 +55,8 @@ export default function AddEntry() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
+  const [voiceMissing, setVoiceMissing] = useState<string[]>([]);
 
   // Live, derived values (these update automatically as the user types).
   const serviceIso = parseFlexibleDate(form.serviceDate);
@@ -100,10 +104,33 @@ export default function AddEntry() {
     setForm((f) => ({ ...f, [key]: val }));
   }
 
+  // Fill the form from a spoken transcript. Nothing is saved automatically —
+  // the user reviews and corrects, then presses Save.
+  function handleVoice(transcript: string) {
+    const ex = parseVoiceEntry(transcript, vehicles);
+    setVoiceTranscript(transcript);
+    setVoiceMissing(ex.missing);
+    setError(null);
+    setForm((f) => ({
+      ...f,
+      vehicleId: ex.vehicleId ?? f.vehicleId,
+      entryType: ex.entryType ?? f.entryType,
+      serviceType: ex.serviceType ?? f.serviceType,
+      category: ex.category ?? f.category,
+      serviceDate: ex.serviceDate ?? f.serviceDate,
+      motDueDate: ex.motDueDate ?? f.motDueDate,
+      amount: ex.amount ?? f.amount,
+      status: ex.status ?? f.status,
+      notes: ex.notes ?? f.notes,
+    }));
+  }
+
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
     setError(null);
+    setVoiceTranscript(null);
+    setVoiceMissing([]);
   }
 
   function startEdit(en: ServiceEntry) {
@@ -198,6 +225,22 @@ export default function AddEntry() {
       {/* ---- Entry form ---- */}
       <form className="card" onSubmit={onSubmit}>
         <h3>{editingId ? "Edit entry" : "Add an entry"}</h3>
+
+        {/* Voice input (Phase 7). Fills the form for review; never auto-saves. */}
+        <VoiceCapture onTranscript={handleVoice} />
+
+        {voiceTranscript && (
+          <div className="voice-transcript">
+            <span className="lbl">You said</span>
+            “{voiceTranscript}”
+          </div>
+        )}
+
+        {voiceMissing.length > 0 && (
+          <div className="voice-missing">
+            Please add the following manually: {voiceMissing.join(" and ")}.
+          </div>
+        )}
 
         <label className="field-label" htmlFor="vehicle">Vehicle</label>
         <select

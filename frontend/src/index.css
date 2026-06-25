@@ -435,6 +435,83 @@ textarea.field-input {
   font-weight: 600;
 }
 
+/* ---- Voice input ---- */
+.voice-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  margin-bottom: 6px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: #fafbff;
+  text-align: center;
+}
+
+.mic-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.mic-btn:disabled {
+  background: #c7cad6;
+  box-shadow: none;
+  cursor: default;
+}
+
+.mic-btn.listening {
+  background: linear-gradient(135deg, var(--danger) 0%, #f43f5e 100%);
+  animation: micpulse 1.2s ease-in-out infinite;
+}
+
+@keyframes micpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.45); }
+  50% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
+}
+
+.voice-interim {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.voice-transcript {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(14, 165, 233, 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.voice-transcript .lbl {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.voice-missing {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(234, 159, 10, 0.14);
+  color: #b45309;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
 /* ---- Searchable select (combobox) ---- */
 .combo {
   position: relative;
