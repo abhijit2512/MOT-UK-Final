@@ -13,6 +13,12 @@ This is a mobile-responsive web app (built first as a web app, and made
 
 ---
 
+## Documentation
+
+- [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) — architecture, phases, agent roles, features, testing (write-up aid).
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — host the database, backend and frontend for a live demo.
+- [`docs/ANDROID.md`](docs/ANDROID.md) — build the Android app, set the app icon and splash.
+
 ## 1. Project structure
 
 ```

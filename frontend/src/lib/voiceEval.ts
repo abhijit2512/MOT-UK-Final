@@ -60,6 +60,42 @@ const EXAMPLES: ExampleSpec[] = [
     transcript: "Repair for Ford Focus on 5 June 2025 amount 75 pounds",
     expected: { vehicleId: "v1", entryType: "Repair", serviceDate: "2025-06-05", amount: "75" },
   },
+  {
+    transcript: "Interim service for BMW 3 Series on 3 March 2026, cost 95 pounds, status done",
+    expected: { vehicleId: "v2", entryType: "Service", serviceType: "Interim Service", serviceDate: "2026-03-03", amount: "95", status: "Done" },
+  },
+  {
+    transcript: "Tyre replacement for Tesla Model 3 on 15/07/2025 amount 320 pounds done, tyres",
+    expected: { vehicleId: "v3", entryType: "Service", serviceType: "Tyre Replacement", category: "Tyres", serviceDate: "2025-07-15", amount: "320", status: "Done" },
+  },
+  {
+    transcript: "MOT test for BMW 3 Series, mot due 1 April 2026, status due",
+    expected: { vehicleId: "v2", entryType: "MOT", serviceType: "MOT Test", motDueDate: "2026-04-01", status: "Due" },
+  },
+  {
+    transcript: "Battery replacement for Ford Focus on 20 January 2026 amount 140 pounds pending",
+    expected: { vehicleId: "v1", entryType: "Service", serviceType: "Battery Replacement", serviceDate: "2026-01-20", amount: "140", status: "Pending" },
+  },
+  {
+    transcript: "Air conditioning service for AB12 CDE on 5/5/2025 cost 89.5 done",
+    expected: { vehicleId: "v1", entryType: "Service", serviceType: "Air Conditioning Service", serviceDate: "2025-05-05", amount: "89.5", status: "Done" },
+  },
+  {
+    transcript: "Brake fluid change for Tesla Model 3, status overdue",
+    expected: { vehicleId: "v3", entryType: "Service", serviceType: "Brake Fluid Change", status: "Overdue" },
+  },
+  {
+    transcript: "Full service for Audi A4 on 9 September 2024 amount 250 pounds done",
+    // Audi A4 is not one of the saved vehicles, so no vehicle is expected.
+    expected: { entryType: "Service", serviceType: "Full Service", serviceDate: "2024-09-09", amount: "250", status: "Done" },
+  },
+  {
+    // A deliberately harder case: the amount is spoken in words ("one hundred"),
+    // which the simple rule-based parser does NOT capture — so this lowers
+    // recall. Included to keep the sample evaluation realistic.
+    transcript: "Oil change on the Ford Focus, paid one hundred pounds on 2 February 2026, done",
+    expected: { vehicleId: "v1", entryType: "Service", serviceType: "Oil Change", serviceDate: "2026-02-02", amount: "100", status: "Done" },
+  },
 ];
 
 export interface EvalFieldRow {
