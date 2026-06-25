@@ -94,6 +94,7 @@ model ServiceEntry {
   vehicleId String
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
+  entryType   String  @default("Service") // MOT, Service, Repair, Insurance, Road Tax, Other
   serviceType String // Service / MOT type (Full Service, MOT Test, ...)
   category    String? // MOT / Service category (Brakes, Tyres, ...)
 

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import vehiclesRouter from "./routes/vehicles";
+import serviceEntriesRouter from "./routes/serviceEntries";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -12,6 +13,9 @@ app.use(express.json());
 
 // Vehicle endpoints (Phase 3).
 app.use("/api/vehicles", vehiclesRouter);
+
+// Service / MOT entry endpoints (Phase 4).
+app.use("/api/entries", serviceEntriesRouter);
 
 /**
  * Health check route.

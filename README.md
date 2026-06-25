@@ -174,6 +174,25 @@ Base URL: `http://localhost:4000`
 | `PUT` | `/api/vehicles/:id` | Update a vehicle |
 | `DELETE` | `/api/vehicles/:id` | Delete a vehicle |
 
+### Service / MOT entries (Phase 4)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/api/entries` | Create an entry |
+| `GET` | `/api/entries` | List all entries |
+| `GET` | `/api/entries/:id` | Get one entry |
+| `PUT` | `/api/entries/:id` | Update an entry |
+| `DELETE` | `/api/entries/:id` | Delete an entry |
+
+- Dates may be typed in several formats (e.g. `12/05/2024`, `12 May 2024`,
+  `2024-05-12`) and are stored internally as clean dates (UK day-first).
+- The **Recommended Service Date** is auto-derived from the Service Date
+  (placeholder rule: +12 months) and updates whenever the Service Date
+  changes. The **MOT Due Date** is stored separately and is never replaced
+  by the recommended date.
+- The Add Entry screen shows the entry form plus the list of saved entries,
+  each with View, Edit and Delete.
+
 Notes:
 - Phase 3 uses a **temporary demo user** to own vehicles (full login comes
   later). It is created automatically the first time you add a vehicle.

@@ -44,6 +44,36 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface ServiceEntry {
+  id: string;
+  vehicleId: string;
+  vehicle?: Vehicle;
+  entryType: string;
+  serviceType: string;
+  category: string | null;
+  serviceDate: string;
+  recommendedServiceDate: string | null;
+  motDueDate: string | null;
+  amount: number | null;
+  status: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Fields the form sends when creating/updating an entry. Dates are strings. */
+export interface ServiceEntryInput {
+  vehicleId: string;
+  entryType: string;
+  serviceType: string;
+  category?: string;
+  serviceDate: string;
+  motDueDate?: string;
+  amount?: number | string;
+  status: string;
+  notes?: string;
+}
+
 export const vehiclesApi = {
   list(): Promise<Vehicle[]> {
     return fetch(`${API_URL}/api/vehicles`).then((r) => handle<Vehicle[]>(r));
@@ -71,6 +101,38 @@ export const vehiclesApi = {
 
   remove(id: string): Promise<{ ok: boolean }> {
     return fetch(`${API_URL}/api/vehicles/${id}`, { method: "DELETE" }).then((r) =>
+      handle<{ ok: boolean }>(r)
+    );
+  },
+};
+
+export const entriesApi = {
+  list(): Promise<ServiceEntry[]> {
+    return fetch(`${API_URL}/api/entries`).then((r) => handle<ServiceEntry[]>(r));
+  },
+
+  get(id: string): Promise<ServiceEntry> {
+    return fetch(`${API_URL}/api/entries/${id}`).then((r) => handle<ServiceEntry>(r));
+  },
+
+  create(input: ServiceEntryInput): Promise<ServiceEntry> {
+    return fetch(`${API_URL}/api/entries`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }).then((r) => handle<ServiceEntry>(r));
+  },
+
+  update(id: string, input: Partial<ServiceEntryInput>): Promise<ServiceEntry> {
+    return fetch(`${API_URL}/api/entries/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }).then((r) => handle<ServiceEntry>(r));
+  },
+
+  remove(id: string): Promise<{ ok: boolean }> {
+    return fetch(`${API_URL}/api/entries/${id}`, { method: "DELETE" }).then((r) =>
       handle<{ ok: boolean }>(r)
     );
   },
