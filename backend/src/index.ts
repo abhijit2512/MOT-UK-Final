@@ -5,6 +5,7 @@ import authRouter from "./routes/auth";
 import vehiclesRouter from "./routes/vehicles";
 import serviceEntriesRouter from "./routes/serviceEntries";
 import { dashboardRouter, reportsRouter, remindersRouter } from "./routes/insights";
+import { validationRouter } from "./routes/validation";
 import { requireAuth } from "./auth";
 
 const app = express();
@@ -28,6 +29,9 @@ app.use("/api/entries", requireAuth, serviceEntriesRouter);
 app.use("/api/dashboard", requireAuth, dashboardRouter);
 app.use("/api/reports", requireAuth, reportsRouter);
 app.use("/api/reminders", requireAuth, remindersRouter);
+
+// Internal validation / evaluation data (Phase 9) — protected.
+app.use("/api/validation", requireAuth, validationRouter);
 
 /**
  * Health check route.

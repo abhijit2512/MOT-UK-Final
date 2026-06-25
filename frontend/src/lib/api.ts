@@ -282,3 +282,34 @@ export const remindersApi = {
     );
   },
 };
+
+// --- Internal validation / evaluation (Phase 9) ---
+export interface ValidationData {
+  sample: boolean;
+  generatedNote: string;
+  recommendationEval: {
+    sample: boolean;
+    k: number;
+    precisionAtK: number;
+    recallAtK: number;
+    ndcg: number;
+    explanation: string;
+  };
+  reminderEval: {
+    sample: boolean;
+    maeDays: number;
+    accuracy: number;
+    timeDeviationDays: number;
+    explanation: string;
+  };
+  feasibility: { label: string; status: "Done" | "Prototype" | "Pending" }[];
+  userEval: { status: string; items: { label: string; value: string }[] };
+}
+
+export const validationApi = {
+  get(): Promise<ValidationData> {
+    return fetch(`${API_URL}/api/validation`, { headers: authHeaders() }).then((r) =>
+      handle<ValidationData>(r)
+    );
+  },
+};

@@ -62,6 +62,16 @@ Auth endpoints: `POST /api/auth/register`, `POST /api/auth/login`,
 `GET /api/auth/me`, `POST /api/auth/logout`. All vehicle, entry, dashboard,
 report and reminder endpoints require a valid token.
 
+### Internal validation screen (Phase 9)
+
+There is a hidden, internal-only evaluation page at
+`/internal/validation-model`. It is **not** in any navigation and is reachable
+only by typing the URL while logged in. It shows NLP/voice metrics (computed
+live from the real parser over labelled samples), sample recommendation and
+reminder metrics, an honest feasibility checklist (Done / Prototype / Pending),
+and user-evaluation placeholders. Data comes from `GET /api/validation`
+(protected by login).
+
 ## 2. Prerequisites
 
 - **Node.js 18+** (this project was built with Node 22)
