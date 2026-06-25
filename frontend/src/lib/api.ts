@@ -74,6 +74,48 @@ export interface ServiceEntryInput {
   notes?: string;
 }
 
+export interface DashboardSummary {
+  totals: {
+    vehicles: number;
+    entries: number;
+    upcomingServices: number;
+    costThisMonth: number;
+  };
+  monthlyCost: { month: string; label: string; total: number }[];
+  topServiceTypes: { name: string; count: number }[];
+  statusCounts: { status: string; count: number }[];
+  topUpcoming: {
+    id: string;
+    vehicle: string;
+    serviceType: string;
+    recommendedServiceDate: string;
+  }[];
+}
+
+export interface ReportResult {
+  fromDate: string | null;
+  toDate: string | null;
+  count: number;
+  totalCost: number;
+  entries: ServiceEntry[];
+}
+
+export interface ReminderItem {
+  id: string;
+  entryId: string;
+  type: "Recommended Service" | "MOT Due";
+  vehicle: string;
+  serviceType: string;
+  date: string;
+  status: "Overdue" | "Due" | "Upcoming";
+}
+
+export interface RemindersResult {
+  today: string;
+  recommendedServices: ReminderItem[];
+  motDue: ReminderItem[];
+}
+
 export const vehiclesApi = {
   list(): Promise<Vehicle[]> {
     return fetch(`${API_URL}/api/vehicles`).then((r) => handle<Vehicle[]>(r));
@@ -135,5 +177,31 @@ export const entriesApi = {
     return fetch(`${API_URL}/api/entries/${id}`, { method: "DELETE" }).then((r) =>
       handle<{ ok: boolean }>(r)
     );
+  },
+};
+
+export const dashboardApi = {
+  summary(): Promise<DashboardSummary> {
+    return fetch(`${API_URL}/api/dashboard/summary`).then((r) =>
+      handle<DashboardSummary>(r)
+    );
+  },
+};
+
+export const reportsApi = {
+  get(fromDate?: string, toDate?: string): Promise<ReportResult> {
+    const params = new URLSearchParams();
+    if (fromDate) params.set("fromDate", fromDate);
+    if (toDate) params.set("toDate", toDate);
+    const qs = params.toString();
+    return fetch(`${API_URL}/api/reports${qs ? `?${qs}` : ""}`).then((r) =>
+      handle<ReportResult>(r)
+    );
+  },
+};
+
+export const remindersApi = {
+  list(): Promise<RemindersResult> {
+    return fetch(`${API_URL}/api/reminders`).then((r) => handle<RemindersResult>(r));
   },
 };

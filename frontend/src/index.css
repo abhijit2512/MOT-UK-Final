@@ -347,6 +347,94 @@ textarea.field-input {
   font-weight: 600;
 }
 
+/* ---- Stat cards ---- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* ---- Charts ---- */
+.chart-wrap {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.chart-empty {
+  margin-top: 8px;
+  padding: 16px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: #fafbff;
+}
+
+/* ---- Date range (Reports) ---- */
+.date-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* On very small screens, stack the two date fields. */
+@media (max-width: 340px) {
+  .date-range {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Upcoming row / reminder badges ---- */
+.upcoming-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-overdue {
+  background: rgba(225, 29, 72, 0.12);
+  color: var(--danger);
+}
+
+.badge-due {
+  background: rgba(234, 159, 10, 0.16);
+  color: #b45309;
+}
+
+.badge-upcoming {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--ok);
+}
+
+.error-text {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 /* ---- Searchable select (combobox) ---- */
 .combo {
   position: relative;

@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import vehiclesRouter from "./routes/vehicles";
 import serviceEntriesRouter from "./routes/serviceEntries";
+import { dashboardRouter, reportsRouter, remindersRouter } from "./routes/insights";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -16,6 +17,11 @@ app.use("/api/vehicles", vehiclesRouter);
 
 // Service / MOT entry endpoints (Phase 4).
 app.use("/api/entries", serviceEntriesRouter);
+
+// Dashboard, reports and reminders (Phase 5).
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/reports", reportsRouter);
+app.use("/api/reminders", remindersRouter);
 
 /**
  * Health check route.

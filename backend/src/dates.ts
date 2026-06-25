@@ -102,3 +102,34 @@ export function computeRecommendedServiceDate(serviceIso: string): string {
 export function isoToDate(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
+
+/** Today's date as "YYYY-MM-DD" (UTC). */
+export function isoToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Turn any Date (or ISO string) into "YYYY-MM-DD". */
+export function toIso(value: Date | string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  return d.toISOString().slice(0, 10);
+}
+
+/** Whole days from `fromIso` to `toIso` (positive if toIso is later). */
+export function daysBetween(fromIso: string, toIso: string): number {
+  const a = isoToDate(fromIso).getTime();
+  const b = isoToDate(toIso).getTime();
+  return Math.round((b - a) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Simple, rule-based reminder status for a due date.
+ *   - Overdue: the due date is in the past
+ *   - Due:     within the next 30 days
+ *   - Upcoming: further than 30 days away
+ */
+export function reminderStatus(dueIso: string): "Overdue" | "Due" | "Upcoming" {
+  const diff = daysBetween(isoToday(), dueIso);
+  if (diff < 0) return "Overdue";
+  if (diff <= 30) return "Due";
+  return "Upcoming";
+}

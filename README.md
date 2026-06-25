@@ -193,6 +193,23 @@ Base URL: `http://localhost:4000`
 - The Add Entry screen shows the entry form plus the list of saved entries,
   each with View, Edit and Delete.
 
+### Dashboard / Reports / Reminders (Phase 5)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/api/dashboard/summary` | Totals, monthly cost, top service types, status counts, top 3 upcoming |
+| `GET` | `/api/reports?fromDate=&toDate=` | Entries filtered by date range, with totals |
+| `GET` | `/api/reminders` | Recommended-service and MOT-due reminders with status |
+
+- The Dashboard uses **bar charts only** (Recharts): monthly cost, most common
+  service types, and entries by status, plus summary cards and the top 3
+  upcoming services. Friendly empty states show when there is no data.
+- Reports accept **From Date** and **To Date** (flexible formats), shown side
+  by side, and return the record count and total cost for the range.
+- Reminders are rule-based: **Overdue** (past), **Due** (within 30 days),
+  **Upcoming** (later). MOT due dates are listed separately from recommended
+  services.
+
 Notes:
 - Phase 3 uses a **temporary demo user** to own vehicles (full login comes
   later). It is created automatically the first time you add a vehicle.
