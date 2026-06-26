@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { MicIcon } from "./Icons";
 
 interface VoiceCaptureProps {
   onTranscript: (text: string) => void;
@@ -65,7 +66,7 @@ export default function VoiceCapture({ onTranscript }: VoiceCaptureProps) {
     return (
       <div className="voice-box">
         <button type="button" className="mic-btn" disabled aria-label="Voice input unavailable">
-          🎤
+          <MicIcon size={24} />
         </button>
         <div className="field-hint">
           Voice input isn't supported in this browser. You can still fill the form
@@ -83,7 +84,7 @@ export default function VoiceCapture({ onTranscript }: VoiceCaptureProps) {
         onClick={listening ? stop : start}
         aria-label={listening ? "Stop listening" : "Start voice input"}
       >
-        🎤
+        <MicIcon size={24} />
       </button>
       <div className="field-hint">
         {listening

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { dashboardApi, type DashboardSummary } from "../lib/api";
 import { formatDisplay } from "../lib/dates";
+import { useAuth } from "../lib/auth";
 import BarChartCard from "../components/BarChartCard";
+import { CarArt, EmptyArt } from "../components/CarArt";
+import { CarIcon, ReportsIcon, RemindersIcon, AddIcon } from "../components/Icons";
 
 /** Shorten long labels so they fit on a mobile chart axis. */
 function shorten(s: string, n = 12): string {
@@ -9,9 +12,11 @@ function shorten(s: string, n = 12): string {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const firstName = user?.name?.split(" ")[0] ?? "there";
 
   useEffect(() => {
     dashboardApi
@@ -44,31 +49,44 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Dashboard</h1>
-      <p className="page-subtitle">Your vehicle service &amp; MOT overview.</p>
+      {/* ---- Hero ---- */}
+      <div className="hero-card">
+        <div className="hero-greeting">Hello, {firstName} 👋</div>
+        <div className="hero-title">Your car care, all in one place</div>
+        <div className="hero-mini">
+          <span className="n">{totals.upcomingServices}</span>
+          <span className="l">upcoming service{totals.upcomingServices === 1 ? "" : "s"}</span>
+        </div>
+        <CarArt className="hero-car" />
+      </div>
 
       {/* ---- Summary cards ---- */}
       <div className="stat-grid">
         <div className="stat-card">
+          <span className="stat-icon indigo"><CarIcon size={18} /></span>
           <div className="stat-value">{totals.vehicles}</div>
           <div className="stat-label">Total vehicles</div>
         </div>
         <div className="stat-card">
+          <span className="stat-icon sky"><ReportsIcon size={18} /></span>
           <div className="stat-value">{totals.entries}</div>
           <div className="stat-label">Total entries</div>
         </div>
         <div className="stat-card">
+          <span className="stat-icon amber"><RemindersIcon size={18} /></span>
           <div className="stat-value">{totals.upcomingServices}</div>
           <div className="stat-label">Upcoming services</div>
         </div>
         <div className="stat-card">
+          <span className="stat-icon green"><AddIcon size={18} /></span>
           <div className="stat-value">£{totals.costThisMonth.toFixed(2)}</div>
           <div className="stat-label">Cost this month</div>
         </div>
       </div>
 
       {noData && (
-        <div className="card">
+        <div className="card empty-state">
+          <EmptyArt className="empty-art" />
           <span className="badge">Getting started</span>
           <h3 style={{ marginTop: 10 }}>No data yet</h3>
           <p>

@@ -5,18 +5,22 @@
 ---------------------------------------------------------------------------- */
 
 :root {
-  --bg: #f3f5f9;
+  --bg: #eef1f8;
   --surface: #ffffff;
   --ink: #0f1729;
-  --ink-soft: #5b6478;
-  --line: #e6e9f0;
+  --ink-soft: #66708a;
+  --line: #e7eaf3;
   --brand: #4f46e5; /* indigo */
   --brand-2: #7c3aed; /* violet */
   --accent: #0ea5e9;
   --danger: #e11d48;
   --ok: #16a34a;
-  --radius: 16px;
-  --shadow: 0 6px 20px rgba(15, 23, 41, 0.08);
+  --warn: #d97706;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 41, 0.06);
+  --shadow: 0 8px 24px rgba(15, 23, 41, 0.08);
+  --shadow-lg: 0 18px 44px rgba(15, 23, 41, 0.16);
   --app-max: 480px; /* phone-style max width on desktop */
 }
 
@@ -34,8 +38,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
@@ -46,11 +50,13 @@ body {
   max-width: var(--app-max);
   margin: 0 auto;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(79, 70, 229, 0.06), transparent 60%),
+    var(--bg);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 40px rgba(15, 23, 41, 0.06);
+  box-shadow: 0 0 60px rgba(15, 23, 41, 0.08);
 }
 
 /* ---- Header ---- */
@@ -272,8 +278,14 @@ body {
 }
 
 .bottom-nav a .icon {
-  font-size: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 26px;
+  border-radius: 999px;
   line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .bottom-nav a.active {
@@ -281,7 +293,7 @@ body {
 }
 
 .bottom-nav a.active .icon {
-  transform: translateY(-1px);
+  background: rgba(79, 70, 229, 0.12);
 }
 
 /* ---- Forms ---- */
@@ -556,9 +568,11 @@ textarea.field-input {
   height: 56px;
   border-radius: 50%;
   border: none;
-  font-size: 24px;
   cursor: pointer;
   color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
   box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
 }
@@ -830,4 +844,152 @@ textarea.field-input {
   margin-top: 10px;
   font-size: 12.5px;
   color: var(--ink-soft);
+}
+
+/* =========================================================================
+   Professional polish (redesign layer)
+   ========================================================================= */
+
+.app-header {
+  box-shadow: 0 6px 22px rgba(15, 23, 41, 0.18);
+}
+.app-header .title {
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+
+/* ---- Auth (login / register) hero ---- */
+.auth-inner {
+  width: 100%;
+  max-width: 390px;
+}
+
+.auth-hero {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 18px;
+}
+
+.auth-car {
+  width: 220px;
+  max-width: 72%;
+  height: auto;
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.35));
+}
+
+.auth-hero-brand {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin-top: 6px;
+}
+
+.auth-hero-tag {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.auth-card {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---- Dashboard hero card ---- */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 18px 18px 20px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 16px;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -70px;
+  top: -90px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
+}
+
+.hero-greeting {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.hero-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 2px 0 12px;
+  max-width: 62%;
+  line-height: 1.25;
+}
+
+.hero-mini {
+  display: inline-flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.hero-mini .n {
+  font-size: 22px;
+  font-weight: 800;
+}
+.hero-mini .l {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.hero-car {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  width: 150px;
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+/* ---- Stat cards with icon chips ---- */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.stat-icon.indigo { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+.stat-icon.sky { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+.stat-icon.green { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.stat-icon.amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+/* ---- Empty-state illustration ---- */
+.empty-state {
+  text-align: center;
+  padding: 8px 8px 4px;
+}
+.empty-art {
+  width: 150px;
+  max-width: 60%;
+  height: auto;
+  margin: 0 auto 6px;
+  display: block;
+}
+
+/* ---- Card hover lift on desktop ---- */
+@media (hover: hover) {
+  .card { transition: box-shadow 0.18s ease, transform 0.18s ease; }
 }

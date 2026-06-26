@@ -54,6 +54,71 @@ function cleanDate(raw: string): string {
   return raw.replace(/(\d{1,2})(st|nd|rd|th)/gi, "$1");
 }
 
+/** Lowercase and reduce to single-spaced alphanumerics ("Mercedes-Benz" -> "mercedes benz"). */
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Lowercase alphanumerics only, no spaces (for registration plates). */
+function compactStr(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Whole-word/phrase match within a normalized string. */
+function hasPhrase(haystack: string, needle: string): boolean {
+  if (!needle) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^| )${escaped}( |$)`).test(haystack);
+}
+
+// Model words too generic to identify a car on their own.
+const GENERIC_MODEL_WORDS = new Set([
+  "series", "class", "model", "line", "edition", "sport", "estate", "saloon",
+]);
+
+/**
+ * Find the best-matching vehicle for a spoken transcript.
+ * Scores each vehicle and returns the highest match, so model-only phrases
+ * ("service for the Model 3"), partial brands ("my Mercedes"), hyphenated
+ * brands and registration numbers all work — not just "Brand Model".
+ */
+function matchVehicle(transcript: string, vehicles: Vehicle[]): string | undefined {
+  const tNorm = normalize(transcript);
+  const tCompact = compactStr(transcript);
+
+  let bestId: string | undefined;
+  let bestScore = 0;
+
+  for (const v of vehicles) {
+    const brand = normalize(v.brandName);
+    const model = normalize(v.model);
+    const reg = compactStr(v.registrationNumber);
+    let score = 0;
+
+    // Registration plate (strongest, most specific).
+    if (reg.length >= 4 && tCompact.includes(reg)) score = Math.max(score, 100);
+    // Full "brand + model".
+    if (brand && model && hasPhrase(tNorm, brand) && hasPhrase(tNorm, model)) score = Math.max(score, 90);
+    // Full model phrase (e.g. "model 3", "3 series").
+    if (model && hasPhrase(tNorm, model)) score = Math.max(score, 75);
+    // Full brand phrase (e.g. "bmw", "mercedes benz").
+    if (brand && hasPhrase(tNorm, brand)) score = Math.max(score, 60);
+    // Partial brand token (e.g. just "mercedes" of "mercedes benz").
+    if (brand.split(" ").some((tok) => tok.length >= 3 && hasPhrase(tNorm, tok))) score = Math.max(score, 45);
+    // Partial, distinctive model token (skip generic words like "series").
+    if (model.split(" ").some((tok) => tok.length >= 3 && !GENERIC_MODEL_WORDS.has(tok) && hasPhrase(tNorm, tok))) {
+      score = Math.max(score, 40);
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestId = v.id;
+    }
+  }
+
+  return bestId;
+}
+
 export function parseVoiceEntry(rawTranscript: string, vehicles: Vehicle[]): VoiceExtraction {
   const transcript = rawTranscript.trim();
   const lower = transcript.toLowerCase();
@@ -116,31 +181,9 @@ export function parseVoiceEntry(rawTranscript: string, vehicles: Vehicle[]): Voi
     }
   }
 
-  // --- Vehicle: by registration, then brand + model, then brand only.
-  const compact = lower.replace(/\s+/g, "");
-  for (const v of vehicles) {
-    const reg = v.registrationNumber.toLowerCase().replace(/\s+/g, "");
-    if (reg && compact.includes(reg)) {
-      result.vehicleId = v.id;
-      break;
-    }
-  }
-  if (!result.vehicleId) {
-    for (const v of vehicles) {
-      if (lower.includes(v.brandName.toLowerCase()) && lower.includes(v.model.toLowerCase())) {
-        result.vehicleId = v.id;
-        break;
-      }
-    }
-  }
-  if (!result.vehicleId) {
-    for (const v of vehicles) {
-      if (lower.includes(v.brandName.toLowerCase())) {
-        result.vehicleId = v.id;
-        break;
-      }
-    }
-  }
+  // --- Vehicle: robust matching (registration, brand+model, model-only,
+  // brand-only, and partial tokens) via a scored matcher.
+  result.vehicleId = matchVehicle(transcript, vehicles);
 
   // --- Amount (search text with the dates removed, so years aren't misread).
   let amtText = lower;

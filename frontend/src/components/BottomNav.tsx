@@ -1,4 +1,12 @@
 import { NavLink } from "react-router-dom";
+import {
+  DashboardIcon,
+  AddIcon,
+  ReportsIcon,
+  RemindersIcon,
+  CarIcon,
+  SettingsIcon,
+} from "./Icons";
 
 /**
  * Bottom navigation bar.
@@ -8,27 +16,23 @@ import { NavLink } from "react-router-dom";
  * visible app navigation. It remains an internal-only route.
  */
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/add-entry", label: "Add", icon: "➕" },
-  { to: "/reports", label: "Reports", icon: "📄" },
-  { to: "/reminders", label: "Reminders", icon: "🔔" },
-  { to: "/vehicles", label: "Vehicles", icon: "🚗" },
-  { to: "/settings", label: "Settings", icon: "⚙️" },
+  { to: "/dashboard", label: "Home", Icon: DashboardIcon },
+  { to: "/add-entry", label: "Add", Icon: AddIcon },
+  { to: "/reports", label: "Reports", Icon: ReportsIcon },
+  { to: "/reminders", label: "Reminders", Icon: RemindersIcon },
+  { to: "/vehicles", label: "Vehicles", Icon: CarIcon },
+  { to: "/settings", label: "Settings", Icon: SettingsIcon },
 ];
 
 export default function BottomNav() {
   return (
     <nav className="bottom-nav">
-      {navItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) => (isActive ? "active" : "")}
-        >
+      {navItems.map(({ to, label, Icon }) => (
+        <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
           <span className="icon" aria-hidden="true">
-            {item.icon}
+            <Icon size={22} />
           </span>
-          <span>{item.label}</span>
+          <span>{label}</span>
         </NavLink>
       ))}
     </nav>
