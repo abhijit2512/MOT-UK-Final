@@ -108,12 +108,16 @@ export default function AddEntry() {
   // the user reviews and corrects, then presses Save.
   function handleVoice(transcript: string) {
     const ex = parseVoiceEntry(transcript, vehicles);
+    // Only auto-select a spoken vehicle if the user can actually add entries
+    // for it (owner/editor); otherwise keep the current selection.
+    const canUseSpoken =
+      ex.vehicleId && vehicles.some((v) => v.id === ex.vehicleId && (v.myRole === "Owner" || v.myRole === "Editor"));
     setVoiceTranscript(transcript);
     setVoiceMissing(ex.missing);
     setError(null);
     setForm((f) => ({
       ...f,
-      vehicleId: ex.vehicleId ?? f.vehicleId,
+      vehicleId: canUseSpoken ? ex.vehicleId! : f.vehicleId,
       entryType: ex.entryType ?? f.entryType,
       serviceType: ex.serviceType ?? f.serviceType,
       category: ex.category ?? f.category,
